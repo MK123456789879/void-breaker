@@ -87,7 +87,7 @@ const REPO_URL = '.';
         audio: [
             { name: 'voice_pre', url: `${REPO_URL}/assets/audio/voice/pre_score.mp3` },
             { name: 'voice_post', url: `${REPO_URL}/assets/audio/voice/post_score.mp3` },
-            { name: 'music_end', url: `${REPO_URL}/assets/audio/music/music_ending.mp3` }
+            { name: 'music_menu', url: `${REPO_URL}/assets/audio/music/music_menu.mp3` }
         ]
     };
 
@@ -178,14 +178,13 @@ function startGame() {
     }
 
     // 2. MUZIEK AFSPELEN
-    // Hier zat de fout: we zoeken nu naar 'music_ending'
-    const music = assets.audio['music_end'] || assets.audio['music_ending'];
+// Geen ingewikkeld gedoe meer, gewoon direct de juiste naam:
+const music = assets.audio['music_menu']; 
 
-    if (music) {
-        console.log("Muziek gevonden! Starten maar...");
-        music.volume = 0.5; 
-        music.loop = true;
-        music.play();
+if (music) {
+    music.volume = 0.5;
+    music.loop = true;
+    music.play();
     } else {
         console.log("Muziek NIET gevonden. De naam in de lijst is anders dan hier.");
         // Debug hulp: wat hebben we wel?
@@ -232,6 +231,7 @@ function startGame() {
 </script>
 </body>
 </html>
+
 
 
 
