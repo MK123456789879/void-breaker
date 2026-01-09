@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VOID BREAKER - Prototype</title>
+    <style>
+        /* --- STYLING (De "Look") --- */
+        body {
+            margin: 0;
+            background-color: #050505;
+            color: #00ffcc;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden; /* Voorkom scrollen op mobiel */
+            touch-action: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle, #1a1a2e 0%, #000000 100%);
+        }
+
+        canvas {
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+            background-color: black;
+        }
+
+        /* UI Overlay (Menu's etc) */
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; /* Laat klikken door naar canvas tenzij op knop */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .screen {
+            pointer-events: auto;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 40px;
+            border: 2px solid #00ffcc;
+            box-shadow: 0 0 15px #00ffcc;
+            display: none; /* Standaard verborgen */
+            max-width: 80%;
+        }
+
+        h1 { text-transform: uppercase; letter-spacing: 5px; text-shadow: 0 0 10px cyan; margin-bottom: 10px; }
+        p { color: #aaffff; font-size: 14px; margin-bottom: 30px; }
+        
+        .btn {
+            background: transparent;
+            border: 1px solid #00ffcc;
+            color: #00ffcc;
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            font-family: inherit;
+            text-transform: uppercase;
+            transition: 0.2s;
+            margin: 10px;
+        }
+        .btn:hover { background: #00ffcc; color: black; box-shadow: 0 0 15px #00ffcc; }
+
+        /* Loading Bar */
+        #loader { display: block; }
+        #progress-bar-container {
+            width: 300px; height: 4px; background: #333; margin-top: 20px;
+        }
+        #progress-bar-fill {
+            width: 0%; height: 100%; background: #00ffcc; transition: width 0.1s;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-layer">
+        
+        <div id="loader" class="screen" style="display: block;">
+            <h1>System Boot</h1>
+            <div id="loading-text">Initializing Assets...</div>
+            <div id="progress-bar-container">
+                <div id="progress-bar-fill"></div>
+            </div>
+        </div>
+
+        <div id="start-screen" class="screen">
+            <h1>Void Breaker</h1>
+            <p>PILOT IDENTIFICATION REQUIRED</p>
+            <button class="btn" onclick="startGame()">Initialize Systems</button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // --- CONFIGURATIE ---
+    // Pas deze URL aan naar jouw GitHub Pages URL!
+    // Let op: eindig ZONDER slash.
+    // Voorbeeld: 'https://jouwnaam.github.io/space-prototype'
+    const REPO_URL = 'https://[JOUW_GITHUB_USER].github.io/[JOUW_REPO_NAAM]'; 
+
+    // --- ASSET MANIFEST (De lijst met bestanden die we gaan laden) ---
+    const assetsToLoad = {
+        images: [
+            { name: 'hero', url: `${REPO_URL}/assets/img/hero_straight.png` },
+            { name: 'hero_L', url: `${REPO_URL}/assets/img/hero_left.png` },
+            { name: 'hero_R', url: `${REPO_URL}/assets/img/hero_right.png` },
+            { name: 'bg', url: `${REPO_URL}/assets/img/bg_space.jpg` }
+            // Voeg hier later vijanden toe
+        ],
+        audio: [
+            // Gebruik hier de bestanden die jij net gemaakt hebt
+            { name: 'voice_pre_score', url: `${REPO_URL}/assets/voice/pre_score.mp3` },
+            { name: 'voice_post_score', url: `${REPO_URL}/assets/voice/post_score.mp3` },
+            { name: 'music_ending', url: `${REPO_URL}/assets/music/music_ending.mp3` }
+            // Voeg hier later de rest toe (music_menu, sfx_shoot, etc)
+        ]
+    };
+
+    const assets = { img: {}, audio: {} }; // Hier slaan we de geladen bestanden op
+    let loadedCount = 0;
+    let totalAssets = assetsToLoad.images.length + assetsToLoad.audio.length;
+
+    // --- LOAD SYSTEM ---
+    function init() {
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        loadAssets();
+    }
+
+    function loadAssets() {
+        updateProgress("Establishing Uplink...");
+
+        // 1. Laad Plaatjes
+        assetsToLoad.images.forEach(item => {
+            const img = new Image();
+            img.src = item.url;
+            img.onload = () => handleLoad(item.name, 'img', img);
+            img.onerror = () => handleError(item.name);
+        });
+
+        // 2. Laad Audio
+        assetsToLoad.audio.forEach(item => {
+            // We gebruiken Web Audio API of simpele HTML5 Audio voor preload
+            const aud = new Audio();
+            aud.src = item.url;
+            aud.oncanplaythrough = () => handleLoad(item.name, 'audio', aud);
+            aud.onerror = () => handleError(item.name);
+            aud.load(); // Forceer laden
+        });
+    }
+
+    function handleLoad(name, type, object) {
+        // Voorkom dubbel tellen bij audio die vaker events vuurt
+        if (type === 'audio' && assets.audio[name]) return;
+
+        assets[type][name] = object;
+        loadedCount++;
+        
+        // Update Balk
+        const pct = Math.floor((loadedCount / totalAssets) * 100);
+        document.getElementById('progress-bar-fill').style.width = pct + '%';
+        document.getElementById('loading-text').innerText = `Loading: ${name} (${pct}%)`;
+
+        if (loadedCount >= totalAssets) {
+            setTimeout(showStartScreen, 500); // Kleine pauze voor dramatisch effect
+        }
+    }
+
+    function handleError(name) {
+        console.error("Failed to load:", name);
+        // We gaan door, anders blijft het spel hangen, maar loggen de fout.
+        loadedCount++; 
+    }
+
+    // --- SCHERM LOGICA ---
+    function showStartScreen() {
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('start-screen').style.display = 'block';
+    }
+
+    function startGame() {
+        document.getElementById('start-screen').style.display = 'none';
+        
+        // TEST: Speel de muziek en de stem om te testen of het werkt
+        // Omdat browsers audio blokkeren tot je klikt, doen we het hier na de klik.
+        playTestAudio();
+        
+        // Start de Game Loop (nu nog leeg)
+        gameLoop();
+    }
+
+    function playTestAudio() {
+        // Test de nieuwe 'ending' muziek en stem
+        console.log("Starting Audio Test...");
+        
+        // Speel de muziek (loop)
+        if(assets.audio['music_ending']) {
+            assets.audio['music_ending'].volume = 0.5;
+            assets.audio['music_ending'].play();
+        }
+
+        // Speel de stem na 1 seconde
+        setTimeout(() => {
+            if(assets.audio['voice_pre_score']) assets.audio['voice_pre_score'].play();
+        }, 1000);
+    }
+
+    // --- GAME ENGINE (BASIC) ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    function gameLoop() {
+        // Wis scherm
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Teken achtergrond (simpel)
+        if (assets.img['bg']) {
+             ctx.drawImage(assets.img['bg'], 0, 0, canvas.width, canvas.height);
+        }
+
+        // Teken schip in het midden (om te testen of img werkt)
+        if (assets.img['hero']) {
+            const ship = assets.img['hero'];
+            const centerX = canvas.width / 2 - ship.width / 2;
+            const centerY = canvas.height / 2 - ship.height / 2;
+            ctx.drawImage(ship, centerX, centerY);
+        }
+
+        // Teken tekst
+        ctx.fillStyle = "white";
+        ctx.font = "20px Courier";
+        ctx.fillText("SYSTEMS ONLINE - ASSETS LOADED", 50, 50);
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    // Start alles
+    init();
+
+</script>
+</body>
+</html>
