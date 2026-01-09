@@ -106,27 +106,22 @@
 </div>
 
 <script>
-    // --- CONFIGURATIE ---
-    // Pas deze URL aan naar jouw GitHub Pages URL!
-    // Let op: eindig ZONDER slash.
-    // Voorbeeld: 'https://jouwnaam.github.io/space-prototype'
-    const REPO_URL = 'https://[JOUW_GITHUB_USER].github.io/[JOUW_REPO_NAAM]'; 
+   // --- CONFIGURATIE ---
+    // Zorg dat deze link klopt! (Zonder slash op het eind)
+    const REPO_URL = 'https://mk123456789879.github.io/void-breaker'; 
 
-    // --- ASSET MANIFEST (De lijst met bestanden die we gaan laden) ---
+    // --- ASSET MANIFEST ---
     const assetsToLoad = {
         images: [
-            { name: 'hero', url: `${REPO_URL}/assets/img/hero_straight.png` },
-            { name: 'hero_L', url: `${REPO_URL}/assets/img/hero_left.png` },
-            { name: 'hero_R', url: `${REPO_URL}/assets/img/hero_right.png` },
-            { name: 'bg', url: `${REPO_URL}/assets/img/bg_space.jpg` }
-            // Voeg hier later vijanden toe
+            // Ik heb deze even leeg gemaakt omdat je nog geen plaatjes hebt.
+            // Zodra je plaatjes hebt geupload, zet je ze hier weer in!
+            // { name: 'hero', url: `${REPO_URL}/assets/img/hero_straight.png` },
         ],
         audio: [
-            // Gebruik hier de bestanden die jij net gemaakt hebt
-            { name: 'voice_pre_score', url: `${REPO_URL}/assets/voice/pre_score.mp3` },
-            { name: 'voice_post_score', url: `${REPO_URL}/assets/voice/post_score.mp3` },
-            { name: 'music_ending', url: `${REPO_URL}/assets/music/music_ending.mp3` }
-            // Voeg hier later de rest toe (music_menu, sfx_shoot, etc)
+            // We testen nu alleen de audio
+            { name: 'voice_pre_score', url: `${REPO_URL}/assets/audio/voice/pre_score.mp3` },
+            { name: 'voice_post_score', url: `${REPO_URL}/assets/audio/voice/post_score.mp3` },
+            { name: 'music_ending', url: `${REPO_URL}/assets/audio/music/music_ending.mp3` }
         ]
     };
 
@@ -260,3 +255,4 @@
 </script>
 </body>
 </html>
+
