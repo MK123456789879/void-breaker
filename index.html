@@ -158,18 +158,22 @@ const REPO_URL = '.';
     }
 
     // --- 4. START ---
-    function startGame() {
+function startGame() {
         console.log("Start geklikt!");
         gameActive = true; 
         
         document.getElementById('ui-layer').style.display = 'none';
         
-        // AUDIO AFSPELEN (Staat nu AAN!)
+        // 1. STEM AFSPELEN (Die deed het al)
         if(assets.audio['voice_pre']) {
-            console.log("Speel audio af...");
-            assets.audio['voice_pre'].play().catch(e => console.log("Browser blokkeerde audio:", e));
-        } else {
-            console.log("Geen audio bestand gevonden in het geheugen.");
+            assets.audio['voice_pre'].play();
+        }
+
+        // 2. MUZIEK AFSPELEN (Deze regel miste je!)
+        if(assets.audio['music_end']) {
+            assets.audio['music_end'].volume = 0.5; // Zet hem op 50% volume (zachter dan stem)
+            assets.audio['music_end'].loop = true;  // Zorg dat hij blijft herhalen
+            assets.audio['music_end'].play();
         }
     }
 
@@ -212,4 +216,5 @@ const REPO_URL = '.';
 </script>
 </body>
 </html>
+
 
