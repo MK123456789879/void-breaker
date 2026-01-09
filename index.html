@@ -159,23 +159,39 @@ const REPO_URL = '.';
 
     // --- 4. START ---
 function startGame() {
-        console.log("Start geklikt!");
-        gameActive = true; 
-        
-        document.getElementById('ui-layer').style.display = 'none';
-        
-        // 1. STEM AFSPELEN (Die deed het al)
-        if(assets.audio['voice_pre']) {
-            assets.audio['voice_pre'].play();
-        }
+    console.log("Start geklikt!");
+    gameActive = true;
+    
+    // Verberg het menu
+    const uiLayer = document.getElementById('ui-layer');
+    if(uiLayer) uiLayer.style.display = 'none';
 
-        // 2. MUZIEK AFSPELEN (Deze regel miste je!)
-        if(assets.audio['music_end']) {
-            assets.audio['music_end'].volume = 0.5; // Zet hem op 50% volume (zachter dan stem)
-            assets.audio['music_end'].loop = true;  // Zorg dat hij blijft herhalen
-            assets.audio['music_end'].play();
-        }
+    // 1. STEM AFSPELEN
+    // We proberen beide namen voor de zekerheid (voice_pre OF voice_pre_score)
+    const voice = assets.audio['voice_pre'] || assets.audio['voice_pre_score'];
+    
+    if (voice) {
+        console.log("Stem gevonden, afspelen...");
+        voice.play();
+    } else {
+        console.log("Geen stem gevonden. Check de naam in assetsToLoad!");
     }
+
+    // 2. MUZIEK AFSPELEN
+    // Hier zat de fout: we zoeken nu naar 'music_ending'
+    const music = assets.audio['music_end'] || assets.audio['music_ending'];
+
+    if (music) {
+        console.log("Muziek gevonden! Starten maar...");
+        music.volume = 0.5; 
+        music.loop = true;
+        music.play();
+    } else {
+        console.log("Muziek NIET gevonden. De naam in de lijst is anders dan hier.");
+        // Debug hulp: wat hebben we wel?
+        console.log("Beschikbare audio:", Object.keys(assets.audio));
+    }
+}
 
     // --- 5. LOOP ---
     function gameLoop() {
@@ -216,5 +232,6 @@ function startGame() {
 </script>
 </body>
 </html>
+
 
 
