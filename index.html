@@ -157,6 +157,32 @@
         });
     }
 
+    function showStartScreen() {
+    console.log("Alles is geladen! Toon startknop.");
+    
+    // 1. Verberg de laadbalk en tekst
+    document.getElementById('progress-bar-fill').style.display = 'none';
+    document.getElementById('loading-text').style.display = 'none';
+
+    // 2. Toon de startknop (ik gok dat hij 'start-screen' of 'overlay' heet)
+    // Als je een element met id="start-btn" hebt, gebruiken we die:
+    const startBtn = document.getElementById('start-btn');
+    if(startBtn) {
+        startBtn.style.display = 'block';
+    } else {
+        // Fallback: Als er geen knop is, maken we het hele scherm klikbaar
+        console.log("Geen startknop gevonden, klik op het scherm om te starten.");
+        document.body.style.cursor = "pointer";
+        window.addEventListener('click', () => {
+             // Hier start je normaal het spel, bijv: startGame();
+             console.log("Spel gestart door klik!");
+             // Verberg eventuele overlay
+             const overlay = document.getElementById('overlay');
+             if(overlay) overlay.style.display = 'none';
+        }, { once: true });
+    }
+}
+    
     function handleLoad(name, type, object) {
         // Voorkom dubbel tellen bij audio die vaker events vuurt
         if (type === 'audio' && assets.audio[name]) return;
@@ -254,5 +280,6 @@
 </script>
 </body>
 </html>
+
 
 
