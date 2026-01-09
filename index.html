@@ -2,301 +2,249 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VOID BREAKER - Prototype</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Void Breaker - System Override</title>
     <style>
-        /* --- STYLING (De "Look") --- */
         body {
             margin: 0;
-            background-color: #050505;
-            color: #00ffcc;
+            overflow: hidden;
+            background-color: #000;
+            color: #0f0;
             font-family: 'Courier New', Courier, monospace;
-            overflow: hidden; /* Voorkom scrollen op mobiel */
-            touch-action: none;
-        }
-
-        #game-container {
-            position: relative;
-            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: radial-gradient(circle, #1a1a2e 0%, #000000 100%);
         }
 
-        canvas {
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
-            background-color: black;
+        #gameCanvas {
+            border: 2px solid #333;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+            background-color: #000;
         }
 
-        /* UI Overlay (Menu's etc) */
-        #ui-layer {
+        /* Loading UI */
+        #loading-overlay {
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; /* Laat klikken door naar canvas tenzij op knop */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             text-align: center;
+            pointer-events: none; /* Klikken gaat erdoorheen tenzij we dat veranderen */
         }
 
-        .screen {
-            pointer-events: auto;
-            background: rgba(0, 0, 0, 0.85);
-            padding: 40px;
-            border: 2px solid #00ffcc;
-            box-shadow: 0 0 15px #00ffcc;
-            display: none; /* Standaard verborgen */
-            max-width: 80%;
+        #progress-bar {
+            width: 300px;
+            height: 20px;
+            border: 2px solid #0f0;
+            margin-top: 10px;
+            position: relative;
         }
 
-        h1 { text-transform: uppercase; letter-spacing: 5px; text-shadow: 0 0 10px cyan; margin-bottom: 10px; }
-        p { color: #aaffff; font-size: 14px; margin-bottom: 30px; }
-        
-        .btn {
-            background: transparent;
-            border: 1px solid #00ffcc;
-            color: #00ffcc;
-            padding: 15px 30px;
-            font-size: 18px;
-            cursor: pointer;
-            font-family: inherit;
-            text-transform: uppercase;
-            transition: 0.2s;
-            margin: 10px;
-        }
-        .btn:hover { background: #00ffcc; color: black; box-shadow: 0 0 15px #00ffcc; }
-
-        /* Loading Bar */
-        #loader { display: block; }
-        #progress-bar-container {
-            width: 300px; height: 4px; background: #333; margin-top: 20px;
-        }
         #progress-bar-fill {
-            width: 0%; height: 100%; background: #00ffcc; transition: width 0.1s;
-            box-shadow: 0 0 10px #00ffcc;
+            height: 100%;
+            background-color: #0f0;
+            width: 0%;
+            transition: width 0.2s;
         }
-
     </style>
 </head>
 <body>
 
-<div id="game-container">
     <canvas id="gameCanvas"></canvas>
 
-    <div id="ui-layer">
-        
-        <div id="loader" class="screen" style="display: block;">
-            <h1>System Boot</h1>
-            <div id="loading-text">Initializing Assets...</div>
-            <div id="progress-bar-container">
-                <div id="progress-bar-fill"></div>
-            </div>
+    <div id="loading-overlay">
+        <div id="loading-text">INITIALIZING...</div>
+        <div id="progress-bar">
+            <div id="progress-bar-fill"></div>
         </div>
-
-        <div id="start-screen" class="screen">
-            <h1>Void Breaker</h1>
-            <p>PILOT IDENTIFICATION REQUIRED</p>
-            <button class="btn" onclick="startGame()">Initialize Systems</button>
-        </div>
-
     </div>
-</div>
 
 <script>
-    let gameActive = false;
-   // --- CONFIGURATIE ---
-    // Zorg dat deze link klopt! (Zonder slash op het eind)
-    const REPO_URL = 'https://mk123456789879.github.io/void-breaker'; 
+    // --- 1. GLOBALE VARIABELEN ---
+    let gameActive = false; // De schakelaar: staat het spel aan?
+    
+    // Canvas instellen
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
-    // --- ASSET MANIFEST ---
+    // Maak canvas schermvullend (optioneel, of vaste grootte)
+    canvas.width = 800;
+    canvas.height = 600;
+
+    // --- 2. CONFIGURATIE ---
+    // Jouw URL uit de screenshot
+    const REPO_URL = 'https://mk123456789879.github.io/void-breaker';
+
+    // --- 3. ASSETS LIJST ---
     const assetsToLoad = {
         images: [
-            // Ik heb deze even leeg gemaakt omdat je nog geen plaatjes hebt.
-            // Zodra je plaatjes hebt geupload, zet je ze hier weer in!
-            // { name: 'hero', url: `${REPO_URL}/assets/img/hero_straight.png` },
+            // Zet hier later je plaatjes weer in. Voor nu even leeg of placeholder.
+            // { name: 'hero', url: `${REPO_URL}/assets/img/hero_straight.png` } 
         ],
         audio: [
-            // We testen nu alleen de audio
             { name: 'voice_pre_score', url: `${REPO_URL}/assets/audio/voice/pre_score.mp3` },
             { name: 'voice_post_score', url: `${REPO_URL}/assets/audio/voice/post_score.mp3` },
             { name: 'music_ending', url: `${REPO_URL}/assets/audio/music/music_ending.mp3` }
         ]
     };
 
-    const assets = { img: {}, audio: {} }; // Hier slaan we de geladen bestanden op
+    const assets = { img: {}, audio: {} };
     let loadedCount = 0;
-    let totalAssets = assetsToLoad.images.length + assetsToLoad.audio.length;
+    // Tel images + audio bij elkaar op. Als er niets is, zetten we hem op 1 om delen door 0 te voorkomen.
+    let totalAssets = (assetsToLoad.images.length + assetsToLoad.audio.length) || 1; 
 
-    // --- LOAD SYSTEM ---
+    // --- 4. LADEN ---
     function init() {
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+        console.log("System Initializing...");
         loadAssets();
+        // Start de loop alvast, die wacht op 'gameActive'
+        requestAnimationFrame(gameLoop);
     }
 
     function loadAssets() {
-        
+        console.log("Establishing Uplink..."); // Oude updateProgress vervangen door console log
+
+        // Als er helemaal geen assets zijn, meteen doorgaan
+        if (assetsToLoad.images.length === 0 && assetsToLoad.audio.length === 0) {
+            handleLoad('dummy', 'none', null);
+            return;
+        }
+
         // 1. Laad Plaatjes
         assetsToLoad.images.forEach(item => {
             const img = new Image();
+            img.crossOrigin = "Anonymous"; // Helpt soms met GitHub Pages
             img.src = item.url;
             img.onload = () => handleLoad(item.name, 'img', img);
-            img.onerror = () => handleError(item.name);
+            img.onerror = () => {
+                console.warn(`Kon plaatje niet laden: ${item.url}`);
+                handleLoad(item.name, 'img', null); // Toch tellen als geladen (foutafhandeling)
+            };
         });
 
         // 2. Laad Audio
         assetsToLoad.audio.forEach(item => {
-            // We gebruiken Web Audio API of simpele HTML5 Audio voor preload
             const aud = new Audio();
             aud.src = item.url;
+            // Voor audio is 'canplaythrough' of 'loadeddata' vaak goed
             aud.oncanplaythrough = () => handleLoad(item.name, 'audio', aud);
-            aud.onerror = () => handleError(item.name);
-            aud.load(); // Forceer laden
+            aud.onerror = () => {
+                console.warn(`Kon audio niet laden: ${item.url}`);
+                handleLoad(item.name, 'audio', null);
+            };
+            aud.load(); 
         });
     }
 
-    function showStartScreen() {
-    console.log("Alles is geladen! Toon startknop.");
-    
-    // 1. Verberg de laadbalk en tekst
-    document.getElementById('progress-bar-fill').style.display = 'none';
-    document.getElementById('loading-text').style.display = 'none';
-
-    // 2. Toon de startknop (ik gok dat hij 'start-screen' of 'overlay' heet)
-    // Als je een element met id="start-btn" hebt, gebruiken we die:
-    const startBtn = document.getElementById('start-btn');
-    if(startBtn) {
-        startBtn.style.display = 'block';
-    } else {
-        // Fallback: Als er geen knop is, maken we het hele scherm klikbaar
-        console.log("Geen startknop gevonden, klik op het scherm om te starten.");
-        document.body.style.cursor = "pointer";
-        window.addEventListener('click', () => {
-             // Hier start je normaal het spel, bijv: startGame();
-             console.log("Spel gestart door klik!");
-            gameActive = true; // ZET DE SCHAKELAAR AAN!
-             // Verberg eventuele overlay
-             const overlay = document.getElementById('overlay');
-             if(overlay) overlay.style.display = 'none';
-        }, { once: true });
-    }
-}
-    
     function handleLoad(name, type, object) {
-        // Voorkom dubbel tellen bij audio die vaker events vuurt
+        // Voorkom dubbele tellingen
         if (type === 'audio' && assets.audio[name]) return;
+        if (object) assets[type][name] = object;
 
-        assets[type][name] = object;
         loadedCount++;
         
         // Update Balk
         const pct = Math.floor((loadedCount / totalAssets) * 100);
-        document.getElementById('progress-bar-fill').style.width = pct + '%';
-        document.getElementById('loading-text').innerText = `Loading: ${name} (${pct}%)`;
+        const barFill = document.getElementById('progress-bar-fill');
+        const loadText = document.getElementById('loading-text');
+        
+        if(barFill) barFill.style.width = pct + '%';
+        if(loadText) loadText.innerText = `LOADING CORE SYSTEMS... ${pct}%`;
 
+        // ZIJN WE KLAAR?
         if (loadedCount >= totalAssets) {
-            setTimeout(showStartScreen, 500); // Kleine pauze voor dramatisch effect
+            console.log("ALL ASSETS LOADED");
+            if(loadText) loadText.innerText = "SYSTEMS ONLINE - ASSETS LOADED";
+            
+            // Wacht heel even en toon dan start optie
+            setTimeout(enableStart, 500);
         }
     }
 
-    function handleError(name) {
-        console.error("Failed to load:", name);
-        // We gaan door, anders blijft het spel hangen, maar loggen de fout.
-        loadedCount++; 
-    }
-
-    // --- SCHERM LOGICA ---
-    function showStartScreen() {
-        document.getElementById('loader').style.display = 'none';
-        document.getElementById('start-screen').style.display = 'block';
+    // --- 5. START LOGICA ---
+    function enableStart() {
+        // Verberg laadbalk
+        document.getElementById('progress-bar').style.display = 'none';
+        
+        const loadText = document.getElementById('loading-text');
+        loadText.innerText = "> CLICK ANYWHERE TO INITIALIZE <";
+        loadText.style.animation = "blink 1s infinite"; // Knipper effect
+        
+        // Maak scherm klikbaar
+        document.body.style.cursor = "pointer";
+        window.addEventListener('click', startGame, { once: true });
     }
 
     function startGame() {
-        document.getElementById('start-screen').style.display = 'none';
+        console.log("Game Starting!");
+        // Verberg de laadtekst en overlay
+        document.getElementById('loading-overlay').style.display = 'none';
         
-        // TEST: Speel de muziek en de stem om te testen of het werkt
-        // Omdat browsers audio blokkeren tot je klikt, doen we het hier na de klik.
-        playTestAudio();
+        // Zet de schakelaar om!
+        gameActive = true;
         
-        // Start de Game Loop (nu nog leeg)
-        gameLoop();
+        // Hier zou je audio kunnen starten als je die had
+        // if(assets.audio['voice_pre_score']) assets.audio['voice_pre_score'].play();
     }
 
-    function playTestAudio() {
-        // Test de nieuwe 'ending' muziek en stem
-        console.log("Starting Audio Test...");
-        
-        // Speel de muziek (loop)
-        if(assets.audio['music_ending']) {
-            assets.audio['music_ending'].volume = 0.5;
-            assets.audio['music_ending'].play();
+    // --- 6. GAME LOOP ---
+    function gameLoop() {
+        // Wis scherm
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // CHECK: Mag het spel al draaien?
+        if (!gameActive) {
+            // Zolang we niet gestart zijn, tekenen we niks spannends in het canvas
+            // De HTML overlay doet het werk (tekst "CLICK TO START")
+            requestAnimationFrame(gameLoop);
+            return; 
         }
 
-        // Speel de stem na 1 seconde
-        setTimeout(() => {
-            if(assets.audio['voice_pre_score']) assets.audio['voice_pre_score'].play();
-        }, 1000);
-    }
+        // --- HIER BEGINT JE SPEL ---
 
-    // --- GAME ENGINE (BASIC) ---
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-
-    function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
-
-    function gameLoop() {
-    // 1. Schoonmaken
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // 2. Achtergrond tekenen
-    if (assets.img['bg']) {
-        ctx.drawImage(assets.img['bg'], 0, 0, canvas.width, canvas.height);
-    }
-
-    // 3. CHECK: Is het spel nog NIET begonnen?
-    if (!gameActive) {
-        // Teken het startscherm bericht
-        ctx.fillStyle = "#00FF00"; // Matrix groen
-        ctx.font = "30px Courier";
-        ctx.textAlign = "center";
-        ctx.fillText("SYSTEMS READY", canvas.width / 2, canvas.height / 2 - 20);
-        
+        // Teken Achtergrond (Placeholder sterrenhemel)
         ctx.fillStyle = "white";
-        ctx.font = "20px Courier";
-        ctx.fillText("- KLIK OM TE STARTEN -", canvas.width / 2, canvas.height / 2 + 20);
-        
+        ctx.fillRect(100, 100, 2, 2); // Sterretje 1
+        ctx.fillRect(200, 500, 2, 2); // Sterretje 2
+        ctx.fillRect(600, 300, 2, 2); // Sterretje 3
+
+        // Teken Hero (Schip)
+        if (assets.img['hero']) {
+            // Als plaatje geladen is:
+            ctx.drawImage(assets.img['hero'], canvas.width/2 - 25, canvas.height - 100);
+        } else {
+            // Fallback: Als er geen plaatje is, tekenen we een groen driehoekje
+            ctx.save();
+            ctx.translate(canvas.width/2, canvas.height - 100);
+            ctx.fillStyle = "#0f0";
+            ctx.beginPath();
+            ctx.moveTo(0, -20);
+            ctx.lineTo(15, 20);
+            ctx.lineTo(-15, 20);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // Blijf loopen
         requestAnimationFrame(gameLoop);
-        return; // STOP HIER, teken de rest nog niet
     }
 
-    // 4. HIER BEGINT HET ECHTE SPEL
-    
-    // Teken de Hero (Schip)
-    if (assets.img['hero']) {
-        // We tekenen hem even in het midden (later koppelen we dit aan jouw besturing)
-        const heroInfo = assets.img['hero'];
-        // Zorg dat je hier later jouw playerX en playerY variabelen gebruikt!
-        ctx.drawImage(heroInfo, canvas.width/2 - 25, canvas.height - 100, 50, 50);
-    }
+    // CSS Knipper animatie toevoegen via JS (handig trucje)
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = `
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+    `;
+    document.head.appendChild(styleSheet);
 
-    // Blijf de loop herhalen
-    requestAnimationFrame(gameLoop);
-}
-    // Start alles
+    // Alles klaarzetten
     init();
 
 </script>
 </body>
 </html>
-
-
-
-
-
