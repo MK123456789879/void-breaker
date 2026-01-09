@@ -177,6 +177,7 @@
         window.addEventListener('click', () => {
              // Hier start je normaal het spel, bijv: startGame();
              console.log("Spel gestart door klik!");
+            gameActive = true; // ZET DE SCHAKELAAR AAN!
              // Verberg eventuele overlay
              const overlay = document.getElementById('overlay');
              if(overlay) overlay.style.display = 'none';
@@ -250,37 +251,51 @@
     }
 
     function gameLoop() {
-        // Wis scherm
-        ctx.fillStyle = "black";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // 1. Schoonmaken
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Teken achtergrond (simpel)
-        if (assets.img['bg']) {
-             ctx.drawImage(assets.img['bg'], 0, 0, canvas.width, canvas.height);
-        }
-
-        // Teken schip in het midden (om te testen of img werkt)
-        if (assets.img['hero']) {
-            const ship = assets.img['hero'];
-            const centerX = canvas.width / 2 - ship.width / 2;
-            const centerY = canvas.height / 2 - ship.height / 2;
-            ctx.drawImage(ship, centerX, centerY);
-        }
-
-        // Teken tekst
-        ctx.fillStyle = "white";
-        ctx.font = "20px Courier";
-        ctx.fillText("SYSTEMS ONLINE - ASSETS LOADED", 50, 50);
-
-        requestAnimationFrame(gameLoop);
+    // 2. Achtergrond tekenen
+    if (assets.img['bg']) {
+        ctx.drawImage(assets.img['bg'], 0, 0, canvas.width, canvas.height);
     }
 
+    // 3. CHECK: Is het spel nog NIET begonnen?
+    if (!gameActive) {
+        // Teken het startscherm bericht
+        ctx.fillStyle = "#00FF00"; // Matrix groen
+        ctx.font = "30px Courier";
+        ctx.textAlign = "center";
+        ctx.fillText("SYSTEMS READY", canvas.width / 2, canvas.height / 2 - 20);
+        
+        ctx.fillStyle = "white";
+        ctx.font = "20px Courier";
+        ctx.fillText("- KLIK OM TE STARTEN -", canvas.width / 2, canvas.height / 2 + 20);
+        
+        requestAnimationFrame(gameLoop);
+        return; // STOP HIER, teken de rest nog niet
+    }
+
+    // 4. HIER BEGINT HET ECHTE SPEL
+    
+    // Teken de Hero (Schip)
+    if (assets.img['hero']) {
+        // We tekenen hem even in het midden (later koppelen we dit aan jouw besturing)
+        const heroInfo = assets.img['hero'];
+        // Zorg dat je hier later jouw playerX en playerY variabelen gebruikt!
+        ctx.drawImage(heroInfo, canvas.width/2 - 25, canvas.height - 100, 50, 50);
+    }
+
+    // Blijf de loop herhalen
+    requestAnimationFrame(gameLoop);
+}
     // Start alles
     init();
 
 </script>
 </body>
 </html>
+
 
 
 
